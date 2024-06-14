@@ -1,68 +1,24 @@
-import torch
-from torch.optim import LBFGS
+import os
 import numpy as np
+import joblib
+import dill
 
-def plan_scores_def(preds_data, plackett_luce, test):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+def load_function(filename):
+    with open(filename, 'rb') as f:
+        loaded_function = dill.load(f)
+    return loaded_function
 
-    unique_plans = np.unique(np.concatenate((preds_data['A'], preds_data['B'])))
-    plan_to_index = {plan: index for index, plan in enumerate(unique_plans)}
+def load_models(model_dir):
+    model_paths = [os.path.join(model_dir, fname) for fname in os.listdir(model_dir) if fname.endswith('.pkl')]
+    models = [joblib.load(path) for path in model_paths]
+    return models
 
-    preds_data['A_idx'] = preds_data['A'].map(plan_to_index)
-    preds_data['B_idx'] = preds_data['B'].map(plan_to_index)
+def base_model(models, X_unseen):
+    all_predictions = np.zeros((len(X_unseen), len(models), 2))
 
-    initial_scores = np.ones(len(unique_plans))
-    scores = torch.tensor(initial_scores, dtype=torch.float64, device=device, requires_grad=True)
+    for i, model in enumerate(models):
+        y_pred_proba = model.predict_proba(X_unseen)
+        all_predictions[:, i, :] = y_pred_proba
 
-    plan_tiers = {}
-    for plan in unique_plans:
-        tier_entry = preds_data[preds_data['A'] == plan]['Tier'].values
-        if len(tier_entry) > 0:
-            plan_tiers[plan] = tier_entry[0]
-        else:
-            plan_tiers[plan] = 0
-
-    tiers = torch.tensor([plan_tiers.get(plan, 0) for plan in unique_plans], dtype=torch.float64, device=device)
-
-    def bradley_terry_likelihood():
-        log_likelihood = 0
-        for i, row in preds_data.iterrows():
-            a = int(row['A_idx'])
-            b = int(row['B_idx'])
-            p = scores[a] / (scores[a] + scores[b])
-            log_likelihood += row['Wins'] * torch.log(p) + (1 - row['Wins']) * torch.log(1 - p)
-        return -log_likelihood
-
-    def apply_tier_adjustments(scores, tiers):
-            adjusted_scores = scores.clone()
-            for i in range(len(scores)):
-                if tiers[i] == 3:
-                    adjusted_scores[i] *= 64
-                    adjusted_scores[i] += 60#50
-                elif tiers[i] == 2:
-                    adjusted_scores[i] *= 16
-                    adjusted_scores[i] += 30#20
-                elif tiers[i] == 1:
-                    adjusted_scores[i] *= 4
-                    adjusted_scores[i] += 8#5
-                elif tiers[i] == 0:
-                    adjusted_scores[i] *= 1
-                    adjusted_scores[i] += 1
-            return adjusted_scores
-
-    optimizer = LBFGS([scores], lr=1)
-
-    def closure():
-        optimizer.zero_grad()
-        loss = bradley_terry_likelihood()
-        loss.backward()
-        return loss
-
-    optimizer.step(closure)
-
-    optimized_scores = scores.cpu().detach().numpy()
-    adjusted_scores = apply_tier_adjustments(scores, tiers).cpu().detach().numpy()
-
-    plan_scores = {plan: adjusted_scores[plan_to_index[plan]] for plan in unique_plans}
-
-    return plan_scores
+    final_predictions = np.mean(all_predictions, axis=1)
+    return final_predictions[:, 0], final_predictions[:, 1]
