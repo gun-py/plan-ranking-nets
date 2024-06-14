@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch.optim import Adam
 from torch_geometric.nn import GATConv
 from torch_geometric.data import Data
-from torch_geometric.utils import to_dense_adj, dense_to_sparse, prune
+from torch_geometric.utils import to_dense_adj, dense_to_sparse
 
 class PlackettLuceAsTransformer(nn.Module):
     def __init__(self, num_players, input_dim, hidden_dim, nhead, num_layers, temperature=1.0):

@@ -6,6 +6,8 @@ from torch.optim import LBFGS
 import matplotlib.pyplot as plt
 import dill
 from utils import *
+from model import *
+from preprocess_knn_embeddings import *
 
 def main(input_path, preds_name):
     model_dir = './model_weights'
