@@ -56,23 +56,6 @@ class MatcherExtractorGNN(nn.Module):
         
         return -log_likelihood_extractor, x_reconstructed
     
-    def plackett_luce_likelihood(self, scores, original_df):
-        log_likelihood = 0
-        for perm in self.permutations:
-            perm_likelihood = 1.0
-            for i in range(len(perm)):
-                for j in range(i + 1, len(perm)):
-                    a_idx = perm[i]
-                    b_idx = perm[j]
-                    p = scores[a_idx] / (scores[a_idx] + scores[b_idx])
-                    p = p ** (1.0 / self.temperature)
-                    if original_df.loc[a_idx, b_idx] == 1:
-                        perm_likelihood *= p
-                    else:
-                        perm_likelihood *= (1 - p)
-            log_likelihood += torch.log(perm_likelihood)
-        return log_likelihood / len(self.permutations)
-    
     def generate_permutations(self, num_players):
         from itertools import permutations
         perms = list(permutations(range(num_players)))
@@ -135,12 +118,6 @@ class PlackettLuceTransLambdaRank(nn.Module):
             log_likelihood += torch.log(perm_likelihood)
         return log_likelihood / len(self.permutations)
     
-    def generate_permutations(self, num_players):
-        from itertools import permutations
-        perms = list(permutations(range(num_players)))
-        return torch.tensor(perms, dtype=torch.long)
-
-
 
 '''
 input_dim = graph.num_features
