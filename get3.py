@@ -12,8 +12,7 @@ def plan_scores_def(cured_data, plackett_luce, test):
             all_predictions[:, i, :] = y_pred_proba
 
         final_predictions = np.mean(all_predictions, axis=1)
-        return list(final_predictions)
-        #return [final_predictions[:, 0], final_predictions[:, 1], final_predictions[:, 2], final_predictions[:, 3]]
+        return [final_predictions[:, 0], final_predictions[:, 1], final_predictions[:, 2], final_predictions[:, 3]]
 
     losses = plackett_luce_loss_optim(plackett_luce, test)
     loss_df = pd.DataFrame(losses).T.idxmax(axis=1)
