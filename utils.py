@@ -2,6 +2,17 @@ import os
 import numpy as np
 import joblib
 import dill
+import json
+from datetime import datetime
+
+def save_dict_to_json(data, filename_prefix):
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    filename = f"{filename_prefix}_{timestamp}.json"
+
+    with open(filename, 'w') as f:
+        json.dump(data, f)
+
+    print(f"Dictionary saved as '{filename}'")
 
 def load_function(filename):
     with open(filename, 'rb') as f:
