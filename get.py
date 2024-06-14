@@ -3,33 +3,32 @@ from torch.optim import LBFGS
 import numpy as np
 import pandas as pd
 
-def plackett_luce_loss(models, X_unseen):
-    all_predictions3 = np.zeros((len(X_unseen), len(models)))
-    all_predictions2 = np.zeros((len(X_unseen), len(models)))
-    all_predictions1 = np.zeros((len(X_unseen), len(models)))
-    all_predictions0 = np.zeros((len(X_unseen), len(models)))
-
-    for i, model in enumerate(models):
-        y_pred_proba3 = model.predict_proba(X_unseen)[:, 3]
-        all_predictions3[:, i] = y_pred_proba3
-
-        y_pred_proba2 = model.predict_proba(X_unseen)[:, 2]
-        all_predictions2[:, i] = y_pred_proba2
-
-        y_pred_proba1 = model.predict_proba(X_unseen)[:, 1]
-        all_predictions1[:, i] = y_pred_proba1
-
-        y_pred_proba0 = model.predict_proba(X_unseen)[:, 0]
-        all_predictions0[:, i] = y_pred_proba0
-
-    final_predictions0 = np.mean(all_predictions0, axis=1)
-    final_predictions1 = np.mean(all_predictions1, axis=1)
-    final_predictions2 = np.mean(all_predictions2, axis=1)
-    final_predictions3 = np.mean(all_predictions3, axis=1)
-
-    return [final_predictions0, final_predictions1, final_predictions2, final_predictions3]
-
 def plan_scores_def(cured_data, plackett_luce, test):
+    def plackett_luce_loss(models, X_unseen):
+        all_predictions3 = np.zeros((len(X_unseen), len(models)))
+        all_predictions2 = np.zeros((len(X_unseen), len(models)))
+        all_predictions1 = np.zeros((len(X_unseen), len(models)))
+        all_predictions0 = np.zeros((len(X_unseen), len(models)))
+
+        for i, model in enumerate(models):
+            y_pred_proba3 = model.predict_proba(X_unseen)[:, 3]
+            all_predictions3[:, i] = y_pred_proba3
+
+            y_pred_proba2 = model.predict_proba(X_unseen)[:, 2]
+            all_predictions2[:, i] = y_pred_proba2
+
+            y_pred_proba1 = model.predict_proba(X_unseen)[:, 1]
+            all_predictions1[:, i] = y_pred_proba1
+
+            y_pred_proba0 = model.predict_proba(X_unseen)[:, 0]
+            all_predictions0[:, i] = y_pred_proba0
+
+        final_predictions0 = np.mean(all_predictions0, axis=1)
+        final_predictions1 = np.mean(all_predictions1, axis=1)
+        final_predictions2 = np.mean(all_predictions2, axis=1)
+        final_predictions3 = np.mean(all_predictions3, axis=1)
+
+        return [final_predictions0, final_predictions1, final_predictions2, final_predictions3]
     losses = plackett_luce_loss(plackett_luce, test)
     loss_df = pd.DataFrame(losses).T.idxmax(axis=1)
     preds_data = pd.DataFrame(cured_data)
